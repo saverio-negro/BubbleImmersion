@@ -14,5 +14,5 @@ enum ImmersiveSpaceState {
 }
 
 class ViewModel: ObservableObject {
-    @Published var immersiveSpaceState = ImmersiveSpaceState.transition
+    @Published var immersiveSpaceState = ImmersiveSpaceState.closed
 }

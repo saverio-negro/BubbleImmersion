@@ -13,6 +13,24 @@ struct ImmersiveView: View {
     
     @State private var bubbleSky = Entity()
     @State private var floor = Entity()
+    var longPressGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.001)
+            .targetedToEntity(bubbleSky)
+            .onEnded { event in
+                // Get a hold of the touched entity via the `event` object
+                if let touchedBubble = event.entity as? ModelEntity {
+                    // Add `PhysicsBodyComponent` to the entity to let it fall
+                    touchedBubble.physicsBody = PhysicsBodyComponent(
+                        massProperties: .default,
+                        material: .generate(
+                            friction: 0.1,
+                            restitution: 0.5
+                        ),
+                        mode: .dynamic
+                    )
+                }
+            }
+    }
     
     var body: some View {
         RealityView { content in
@@ -22,15 +40,23 @@ struct ImmersiveView: View {
             content.add(floor)
             content.add(bubbleSky)
         }
+        .gesture(
+            longPressGesture
+        )
     }
     
     // Generate floor entity
     func generateFloor() -> ModelEntity {
+        
+        // Create a box that is 5 meters wide, 0.0001 meters thick, and 5 meters deep.
         let floor = ModelEntity(mesh: .generateBox(size: [5.0, 0.0001, 5.0]))
         floor.position.z = -3
+        
+        // Center the plane at x=0. By default, the generated primitive centers itself at the supplied position.
         floor.position.x = 0
         floor.position.y = 0
         
+        // Make the entity invisible
         floor.components.set(OpacityComponent(opacity: 0))
         floor.components.set(PhysicsBodyComponent(
             massProperties: .default,
