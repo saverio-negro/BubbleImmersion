@@ -12,11 +12,38 @@ import RealityKitContent
 struct ImmersiveView: View {
     
     @State private var bubbleSky = Entity()
+    @State private var floor = Entity()
     
     var body: some View {
         RealityView { content in
+            floor = generateFloor()
+            bubbleSky = generateBubbleSky(height: 1.8)
             
+            content.add(floor)
+            content.add(bubbleSky)
         }
+    }
+    
+    // Generate floor entity
+    func generateFloor() -> ModelEntity {
+        let floor = ModelEntity(mesh: .generateBox(size: [5.0, 0.0001, 5.0]))
+        floor.position.z = -3
+        floor.position.x = 0
+        floor.position.y = 0
+        
+        floor.components.set(OpacityComponent(opacity: 0))
+        floor.components.set(PhysicsBodyComponent(
+            massProperties: .default,
+            material: .generate(
+                friction: 0.1,
+                restitution: 1.0
+            ),
+            mode: .static
+        ))
+        
+        floor.generateCollisionShapes(recursive: true)
+        
+        return floor
     }
     
     // Generate grid of bubbles
