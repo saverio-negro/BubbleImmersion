@@ -11,14 +11,105 @@ import RealityKitContent
 
 struct ImmersiveView: View {
     
+    @Environment(\.dismissImmersiveSpace) var dismissImmersiveSpace
+    @EnvironmentObject var viewModel: ViewModel
+    
     @State private var bubbleSky = Entity()
+    @State private var bubbleCount = 0
     @State private var floor = Entity()
+    let headAnchor = {
+        let anchorEntity = AnchorEntity(.head)
+        anchorEntity.position = SIMD3<Float>(0.7, -0.2, -1.0)
+        
+        return anchorEntity
+    }()
+    @State private var inputText = "Touch as many bubbles as you can!"
+    @State private var remainingTime = 60
+    @State private var score = 0
+    @State private var hasGameStarted = false
+    @State private var hasGameEnded = false
+    @State private var isFirstRound = true
+    
+    // SwiftUI Attachment
+    var playAttachment: some View {
+        VStack {
+            
+            if hasGameStarted {
+                Text("Time left: \(remainingTime)")
+                    .font(.extraLargeTitle)
+                    .fontWeight(.regular)
+                    .padding(30)
+                
+                Text("Score: \(score)")
+                    .font(.extraLargeTitle2)
+                    .fontWeight(.regular)
+                    .padding(30)
+                
+                Text("Hint: Touch the bubbles!")
+                    .font(.largeTitle)
+            } else {
+                
+                Text(inputText)
+                    .lineLimit(.max)
+                    .font(.extraLargeTitle2)
+                    .fontWeight(.regular)
+                    .padding(30)
+                
+                if isFirstRound {
+                    Button {
+                        hasGameStarted = true
+                        isFirstRound = false
+                    } label: {
+                        Text("Ready")
+                            .font(.largeTitle)
+                            .padding()
+                    }
+                }
+            }
+            
+            if hasGameEnded {
+                retryAttachment
+            }
+        }
+        .padding(50)
+        .glassBackgroundEffect()
+    }
+    
+    // SwiftUI Attachment
+    var retryAttachment: some View {
+        VStack {
+            Button {
+                hasGameEnded = false
+                hasGameStarted = true
+            } label: {
+                Text("Play Again")
+                    .font(.largeTitle)
+                    .padding()
+            }
+            
+            Button {
+                Task {
+                    await dismissImmersiveSpace()
+                }
+            } label: {
+                Text("Exit")
+                    .font(.largeTitle)
+                    .padding()
+            }
+        }
+        .padding(50)
+    }
+    
+    // Long press gesture
     var longPressGesture: some Gesture {
         LongPressGesture(minimumDuration: 0.001)
             .targetedToEntity(bubbleSky)
             .onEnded { event in
                 // Get a hold of the touched entity via the `event` object
                 if let touchedBubble = event.entity as? ModelEntity {
+                    // Increase Score
+                    score += 1
+                    
                     // Add `PhysicsBodyComponent` to the entity to let it fall
                     touchedBubble.physicsBody = PhysicsBodyComponent(
                         massProperties: .default,
@@ -33,16 +124,66 @@ struct ImmersiveView: View {
     }
     
     var body: some View {
-        RealityView { content in
+        RealityView { content, attachments in
             floor = generateFloor()
             bubbleSky = generateBubbleSky(height: 1.8)
             
+            if let attachment = attachments.entity(for: "attachment") {
+                headAnchor.addChild(attachment)
+            }
+            
             content.add(floor)
             content.add(bubbleSky)
+            content.add(headAnchor)
+        } attachments: {
+            Attachment(id: "attachment") {
+                playAttachment
+                    .frame(
+                        minWidth: 500,
+                        maxWidth: 1000,
+                        alignment: .center
+                    )
+            }
         }
         .gesture(
             longPressGesture
         )
+        .onChange(of: hasGameStarted) { _, newValue in
+            if newValue {
+                reset()
+                Task {
+                    await startCountdown()
+                }
+            }
+        }
+        .onChange(of: hasGameEnded) { _, newValue in
+            if newValue {
+                hasGameStarted = false
+            }
+        }
+    }
+    
+    func getNanosecondsFromSeconds(seconds: Float) -> UInt64 {
+        return UInt64(seconds * pow(10, 9))
+    }
+    
+    func reset() {
+        remainingTime = 60
+        score = 0
+    }
+    
+    func startCountdown() async {
+        while (remainingTime > 0 && score < bubbleCount) {
+            try! await Task.sleep(nanoseconds: getNanosecondsFromSeconds(seconds: 1))
+            remainingTime -= 1
+            inputText = String(remainingTime)
+        }
+        
+        inputText = (score == bubbleCount) ?
+            "Congrats!\n\nYou touched all the \(bubbleCount) bubbles in time!"
+                :
+            "Time Over!\n\nYou touched \(score) bubbles."
+        hasGameEnded = true
     }
     
     // Generate floor entity
@@ -89,6 +230,7 @@ struct ImmersiveView: View {
                 bubble.position.z = Float(z)
                 
                 sphereCollection.addChild(bubble)
+                bubbleCount += 1
             }
         }
         return sphereCollection

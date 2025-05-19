@@ -21,16 +21,21 @@ struct ContentView: View {
     var body: some View {
         VStack {
             Text("Welcome to Bubble Immersion")
-                .font(.largeTitle)
+                .font(.extraLargeTitle)
                 .padding(50)
             Text("Move around your space and touch each bubble to cause it to fall.")
+                .font(.largeTitle)
+            Text("Touch as many bubbles as you can to let them fall to the ground, in the least time possible.")
+                .font(.largeTitle)
             Text("Be sure to start in a large open space.")
+                .font(.largeTitle)
             
             Toggle("Enter Bubble Immersion", isOn: $showImmersiveSpace)
-                .padding(50)
+                .font(.largeTitle)
                 .toggleStyle(.button)
+                .padding(50)
         }
-        .padding()
+        .padding(50)
         .onChange(of: showImmersiveSpace) {
             Task {
                 switch viewModel.immersiveSpaceState {
