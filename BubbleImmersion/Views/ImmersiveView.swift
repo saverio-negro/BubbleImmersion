@@ -106,7 +106,7 @@ struct ImmersiveView: View {
             .targetedToEntity(bubbleSky)
             .onEnded { event in
                 // Get a hold of the touched entity via the `event` object
-                if let touchedBubble = event.entity as? ModelEntity {
+                if let touchedBubble = event.entity as? ModelEntity, hasGameStarted {
                     // Increase Score
                     score += 1
                     

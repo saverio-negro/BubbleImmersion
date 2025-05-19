@@ -19,10 +19,14 @@ struct ContentView: View {
     
     
     var body: some View {
-        VStack {
-            Text("Welcome to Bubble Immersion")
-                .font(.extraLargeTitle)
-                .padding(50)
+        VStack(alignment: .leading) {
+            VStack(alignment: .center) {
+                Text("Welcome to Bubble Immersion")
+                    .font(.extraLargeTitle)
+                    .padding(50)
+            }
+            .frame(maxWidth: .infinity)
+            
             Text("Move around your space and touch each bubble to cause it to fall.")
                 .font(.largeTitle)
             Text("Touch as many bubbles as you can to let them fall to the ground, in the least time possible.")
@@ -30,10 +34,16 @@ struct ContentView: View {
             Text("Be sure to start in a large open space.")
                 .font(.largeTitle)
             
-            Toggle("Enter Bubble Immersion", isOn: $showImmersiveSpace)
-                .font(.largeTitle)
+            VStack(alignment: .center) {
+                Toggle(isOn: $showImmersiveSpace) {
+                    Text("\(showImmersiveSpace ? "Exit" : "Enter") Bubble Immersion")
+                        .font(.largeTitle)
+                        .padding(35)
+                }
                 .toggleStyle(.button)
                 .padding(50)
+                .frame(maxWidth: .infinity)
+            }
         }
         .padding(50)
         .onChange(of: showImmersiveSpace) {
